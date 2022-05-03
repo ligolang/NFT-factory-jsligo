@@ -1,9 +1,6 @@
 #import "storage.jsligo" "Storage"
 #import "parameter.jsligo" "Parameter"
 #import "generic_fa2/core/instance/NFT.mligo" "NFT_FA2"
-//#import "views.mligo" "Views"
-//#import "errors.mligo" "Errors"
-//#import "conditions.mligo" "Conditions"
 
 export type storage = Storage.t;
 export type parameter = Parameter.t;

@@ -85,13 +85,11 @@ let test = () : unit => {
         let taddrFa2Address = (Test.cast_address(fa2Address) as typed_address<Factory.NFT_FA2.parameter, ext_fa2_storage>);
         let fa2Store : ext_fa2_storage = Test.get_storage (taddrFa2Address);
         _tst = assert( ((Factory.NFT_FA2.Storage.is_owner_of(fa2Store))(alice))(1 as nat) );
-        _print = Test.log(fa2Store);
 
         // APPROVE marketplace to transfer token 1
         _src = Test.set_source (alice);
         let marketplaceContract : contract<Marketplace.parameter> = Test.to_contract (marketplace_taddr);
         let marketplaceAddress  = Tezos.address (marketplaceContract);
-        _print = Test.log(marketplaceAddress);
         let fa2Contract : contract<Factory.NFT_FA2.parameter> = Test.to_contract (taddrFa2Address);
         let updateOperatorsParam : Factory.NFT_FA2.NFT.update_operators = list([Add_operator({owner:alice, operator:marketplaceAddress, token_id:(1 as nat)})]);
         _exec = Test.transfer_to_contract_exn(fa2Contract, (Update_operators(updateOperatorsParam)), 0 as mutez);
@@ -114,7 +112,6 @@ let test = () : unit => {
 
         let fa2StoreAfter : ext_fa2_storage = Test.get_storage (taddrFa2Address);
         _tst = assert( ((Factory.NFT_FA2.Storage.is_owner_of(fa2StoreAfter))(bob))(1 as nat) );
-        _print = Test.log(fa2StoreAfter);
         "OK"
     };
 
