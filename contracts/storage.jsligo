@@ -3,6 +3,7 @@ export type collectionOwner = address;
 
 export type t = {
     allCollections : big_map<collectionContract, collectionOwner>,
-    ownedCollections : big_map<collectionOwner, list<collectionContract> >
+    ownedCollections : big_map<collectionOwner, list<collectionContract> >,
+    metadata: big_map<string, bytes>
 };
 

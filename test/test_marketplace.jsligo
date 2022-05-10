@@ -30,7 +30,8 @@ let test = () : unit => {
    // originate Factory smart contract
     let init_storage : Factory.Storage.t = { 
         allCollections:(Big_map.empty as big_map<Factory.Storage.collectionContract, Factory.Storage.collectionOwner>),
-        ownedCollections:(Big_map.empty as big_map<Factory.Storage.collectionOwner, list<Factory.Storage.collectionContract>> )
+        ownedCollections:(Big_map.empty as big_map<Factory.Storage.collectionOwner, list<Factory.Storage.collectionContract>> ),
+        metadata: (Big_map.empty as big_map<string, bytes>)
     };
     const [addr,_,_] = Test.originate(Factory.main, init_storage, 0 as tez);
 
