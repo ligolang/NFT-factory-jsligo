@@ -20,18 +20,22 @@ factory: factory.tz factory.json
 
 factory.tz: contracts/main.jsligo
 	@echo "Compiling smart contract to Michelson"
+	@mkdir -p compiled
 	@$(ligo_compiler) compile contract $^ -e main $(PROTOCOL_OPT) $(PROJECTROOT_OPT) > compiled/$@
 
 factory.json: contracts/main.jsligo
 	@echo "Compiling smart contract to Michelson in JSON format"
+	@mkdir -p compiled
 	@$(ligo_compiler) compile contract $^ $(JSON_OPT) -e main $(PROTOCOL_OPT) $(PROJECTROOT_OPT) > compiled/$@
 
 fa2_nft.tz: contracts/generic_fa2/core/instance/NFT.mligo
 	@echo "Compiling smart contract FA2 to Michelson"
+	@mkdir -p contracts/generic_fa2/compiled
 	@$(ligo_compiler) compile contract $^ -e main $(PROTOCOL_OPT) $(PROJECTROOT_OPT) > contracts/generic_fa2/compiled/$@
 
 marketplace_nft.tz: contracts/marketplace/main.jsligo
 	@echo "Compiling smart contract Marketplace to Michelson"
+	@mkdir -p contracts/marketplace/compiled
 	@$(ligo_compiler) compile contract $^ -e main $(PROTOCOL_OPT) $(PROJECTROOT_OPT) > contracts/marketplace/compiled/$@
 
 clean: clean_contracts clean_fa2 clean_marketplace
