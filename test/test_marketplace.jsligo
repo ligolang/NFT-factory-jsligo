@@ -19,7 +19,7 @@ const assertStringFailure = ([res, expected_error]: [test_exec_result, string]):
     });
 };
 
-let test = () : unit => {
+let _test = () : unit => {
     // setup 4 accounts 
     let _ = Test.reset_state(4 as nat, (list([]) as list<tez>));
     const alice: address = Test.nth_bootstrap_account(0);
@@ -119,4 +119,4 @@ let test = () : unit => {
     const _exec = _generates_collection_1_should_works();
 };
 
-const _test = test();
+const test = _test();
