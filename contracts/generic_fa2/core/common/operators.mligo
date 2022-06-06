@@ -13,7 +13,7 @@ type t = ((owner * operator), token_id set) big_map
 
 (** if transfer policy is Owner_or_operator_transfer *)
 let assert_authorisation (operators : t) (from_ : Address.t) (token_id : nat) : unit = 
-   let sender_ = Tezos.sender in
+   let sender_ = Tezos.get_sender () in
    if (Address.equal sender_ from_) then ()
    else 
    let authorized = match Big_map.find_opt (from_,sender_) operators with
@@ -22,7 +22,7 @@ let assert_authorisation (operators : t) (from_ : Address.t) (token_id : nat) : 
    else failwith Errors.not_operator
 (** if transfer policy is Owner_transfer
 let assert_authorisation (operators : t) (from_ : Address.t) : unit = 
-   let sender_ = Tezos.sender in
+   let sender_ = Tezos.get_sender () in
    if (sender_ = from_) then ()
    else failwith Errors.not_owner
 *)
@@ -38,7 +38,7 @@ let is_operator (operators, owner, operator, token_id : (t * Address.t * Address
    (owner = operator || Set.mem token_id authorized)
 
 let assert_update_permission (owner : owner) : unit =
-   assert_with_error (Address.equal owner Tezos.sender) Errors.only_sender_manage_operators
+   assert_with_error (Address.equal owner (Tezos.get_sender ())) Errors.only_sender_manage_operators
 
 let add_operator (operators : t) (owner : owner) (operator : operator) (token_id : token_id) : t =
    if owner = operator then operators (* assert_authorisation always allow the owner so this case is not relevant *)

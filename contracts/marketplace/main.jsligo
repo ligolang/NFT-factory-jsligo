@@ -7,9 +7,9 @@ type storage = Storage.t;
 export type parameter = Parameter.t;
 type return_ = [list<operation>, storage];
 
-let create_sell_proposal = ([param, store] : [Parameter.sell_proposal_param, Storage.t]) : return_ => {
+const create_sell_proposal = ([param, store] : [Parameter.sell_proposal_param, Storage.t]) : return_ => {
     // check if sender is the owner of the nft token
-    let balanceOpt : option<nat> = Tezos.call_view("get_balance", [Tezos.sender, param.token_id], param.collectionContract);
+    let balanceOpt : option<nat> = Tezos.call_view("get_balance", [Tezos.get_sender (), param.token_id], param.collectionContract);
     let balanceVal : nat = match(balanceOpt, {
         None: () => (failwith(Errors.unknownViewGetBalance) as nat),
         Some: (v: nat) => v
@@ -22,21 +22,21 @@ let create_sell_proposal = ([param, store] : [Parameter.sell_proposal_param, Sto
    
     let _check_owner : unit = assert_with_error( (balanceVal == (1 as nat)), Errors.not_owner);
     // Add new proposal
-    let new_proposals = Big_map.add(store.next_sell_id, { owner:Tezos.sender, token_id:param.token_id, collectionContract:param.collectionContract, active:true, price:param.price, hasard_level:usageVal }, store.sell_proposals);
+    let new_proposals = Big_map.add(store.next_sell_id, { owner:Tezos.get_sender (), token_id:param.token_id, collectionContract:param.collectionContract, active:true, price:param.price, hasard_level:usageVal }, store.sell_proposals);
     let new_next_sell_id : nat = store.next_sell_id + (1 as nat);
     let new_active_proposals : set<nat> = Set.add(store.next_sell_id, store.active_proposals); 
 
     return [(list([]) as list<operation>), { ...store, next_sell_id:new_next_sell_id, sell_proposals:new_proposals, active_proposals:new_active_proposals }];
 };
 
-let accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : return_ => {
+const accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : return_ => {
     let _check_among_active_proposals : unit = assert_with_error( (Set.mem(param.proposal_id, store.active_proposals)), Errors.proposal_not_active); 
     let propal : Storage.sell_proposal = match(Big_map.find_opt(param.proposal_id, store.sell_proposals), {
         None: () => (failwith(Errors.unknown_proposal) as Storage.sell_proposal),
         Some: (pr: Storage.sell_proposal) => pr
     });
     let _check_status : unit = assert_with_error((propal.active), Errors.proposal_not_active);
-    let _check_amount : unit = assert_with_error((propal.price == Tezos.amount), Errors.wrong_amount);
+    let _check_amount : unit = assert_with_error((propal.price == (Tezos.get_amount ())), Errors.wrong_amount);
     
     let new_propal = { ...propal, active:false };
     let new_active_proposals : set<nat> = Set.remove(param.proposal_id, store.active_proposals);
@@ -48,7 +48,7 @@ let accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : retu
         None: () => (failwith("Unknwon owner") as contract<unit>), 
         Some: (c: contract<unit>) => c
     });
-    let op : operation = Tezos.transaction(unit, Tezos.amount, destination);
+    let op : operation = Tezos.transaction(unit, Tezos.get_amount (), destination);
     
     // transfer Nft to new_owner
     let collection_transfer_dest_opt :  option<contract<NFT_FA2.NFT.transfer>> = Tezos.get_entrypoint_opt("%transfer", propal.collectionContract);
@@ -56,13 +56,13 @@ let accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : retu
         None: () => (failwith(Errors.unknown_fa2_contract) as contract<NFT_FA2.NFT.transfer>), 
         Some: (ct: contract<NFT_FA2.NFT.transfer>) => ct
     });
-    let nft_transfer : NFT_FA2.NFT.transfer = list([{ from_:propal.owner, tx:list([{to_:Tezos.sender, token_id:propal.token_id}])}]);
+    let nft_transfer : NFT_FA2.NFT.transfer = list([{ from_:propal.owner, tx:list([{to_:Tezos.get_sender (), token_id:propal.token_id}])}]);
     let op2 : operation = Tezos.transaction(nft_transfer, (0 as mutez), collection_transfer_dest);
     
     return [list([op, op2]), { ...store,  sell_proposals:new_proposals, active_proposals:new_active_proposals }]
 };
 
-export let main = ([ep, store] : [parameter, storage]) : return_ => {
+export const main = ([ep, store] : [parameter, storage]) : return_ => {
     match(ep, { 
         Sell: (p: sell_proposal_param) => create_sell_proposal(p, store),
         Buy: (p: buy_param) => accept_proposal(p, store)
@@ -70,7 +70,7 @@ export let main = ([ep, store] : [parameter, storage]) : return_ => {
 };
 
 // @view
-let get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => { 
+const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => { 
     return match(Big_map.find_opt(p, s.sell_proposals), { 
         None: () => (failwith("") as Storage.sell_proposal),
         Some: (prop: Storage.sell_proposal) => prop 
@@ -78,6 +78,6 @@ let get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => {
 };
 
 // @view
-let active_proposals = ([_p, s] : [unit, storage]) : list<nat> => { 
+const active_proposals = ([_p, s] : [unit, storage]) : list<nat> => { 
     Set.fold( ( ([acc, i] : [list<nat>, nat]) => list([i, ...acc])), s.active_proposals, (list([]) as list<nat>) );
 };
