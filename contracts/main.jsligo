@@ -10,11 +10,11 @@ type store = NFT_FA2.Storage.t;
 type ext = NFT_FA2.extension;
 type extStorage = store<ext>;
 
-let generateCollection = ([param, store] : [Parameter.generateCollectionParam, Storage.t]) : return_ => {
+const generateCollection = ([param, store] : [Parameter.generateCollectionParam, Storage.t]) : return_ => {
     // create new collection
     let tokenIds = param.tokenIds;
     let ledger = (Big_map.empty as NFT_FA2.Storage.Ledger.t);
-    let myfunc = ([acc, elt] : [NFT_FA2.Storage.Ledger.t, nat]) : NFT_FA2.Storage.Ledger.t => Big_map.add(elt, Tezos.sender, acc);
+    let myfunc = ([acc, elt] : [NFT_FA2.Storage.Ledger.t, nat]) : NFT_FA2.Storage.Ledger.t => Big_map.add(elt, Tezos.get_sender (), acc);
     let newLedger : NFT_FA2.Storage.Ledger.t = List.fold(myfunc, tokenIds, ledger);
 
     let tokenUsage = (Big_map.empty as NFT_FA2.TokenUsage.t);
@@ -31,7 +31,7 @@ let generateCollection = ([param, store] : [Parameter.generateCollectionParam, S
         token_ids:tokenIds,
         token_metadata:tokenMetadata,
         extension : {
-          admin:Tezos.sender,
+          admin:Tezos.get_sender (),
           token_usage:newTokenUsage,
         }
     };
@@ -51,16 +51,16 @@ let generateCollection = ([param, store] : [Parameter.generateCollectionParam, S
 
     let originate : [operation, address] = createMyContract(initialDelegate, initialAmount, initialStorage);
     // insert into collections
-    let newAllCollections = Big_map.add(originate[1], Tezos.sender, store.allCollections);
+    let newAllCollections = Big_map.add(originate[1], Tezos.get_sender (), store.allCollections);
     // insert into ownedCollections
-    let newOwnedCollections = match(Big_map.find_opt(Tezos.sender, store.ownedCollections), {
-      None: () => Big_map.add( Tezos.sender, (list([originate[1]]) as list<address>), store.ownedCollections),
-      Some: (addrLst: list<address>) => Big_map.update( Tezos.sender, (Some( list([originate[1], ...addrLst]) )), store.ownedCollections)
+    let newOwnedCollections = match(Big_map.find_opt(Tezos.get_sender (), store.ownedCollections), {
+      None: () => Big_map.add( Tezos.get_sender (), (list([originate[1]]) as list<address>), store.ownedCollections),
+      Some: (addrLst: list<address>) => Big_map.update( Tezos.get_sender (), (Some( list([originate[1], ...addrLst]) )), store.ownedCollections)
     });
     return [list([originate[0]]), { ...store, allCollections:newAllCollections, ownedCollections:newOwnedCollections}];
 };
 
-export let main = ([ep, store] : [parameter, storage]) : return_ => {
+export const main = ([ep, store] : [parameter, storage]) : return_ => {
     match(ep, { 
       GenerateCollection: (p: Parameter.generateCollectionParam) => generateCollection(p, store),
       Nothing: () => [(list([]) as list<operation>), store]

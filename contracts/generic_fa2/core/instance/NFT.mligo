@@ -43,7 +43,7 @@ let get_usage_of (s:extension storage) (token_id : Storage.token_id) : nat =
    | Some nb_trsfr -> nb_trsfr
 
 let authorize_extension (s:extension storage): unit =
-   assert_with_error (Tezos.sender = s.extension.admin) Errors.only_admin
+   assert_with_error (Tezos.get_sender () = s.extension.admin) Errors.only_admin
 
 let transfer_extension (t: NFT.transfer) (s:extension storage): operation list * extension storage =
    let process_atomic_usage (usage, t:TokenUsage.t * NFT.atomic_trans) = TokenUsage.update_usage_token usage t.token_id in
@@ -63,7 +63,7 @@ let mint (param: mint_param) (s: extension storage) : operation list * extension
    let new_token_ids : nat list = List.fold add_id param.ids s.token_ids in
    
    // update ledger
-   let set_token_owner (acc, elt : Ledger.t * Storage.token_id) : Ledger.t = Big_map.add elt Tezos.sender acc in
+   let set_token_owner (acc, elt : Ledger.t * Storage.token_id) : Ledger.t = Big_map.add elt (Tezos.get_sender ()) acc in
    let new_ledger : Ledger.t = List.fold set_token_owner param.ids s.ledger in
    
    // update token_metadata

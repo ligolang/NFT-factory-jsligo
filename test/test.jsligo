@@ -11,20 +11,20 @@ const assertStringFailure = ([res, expected_error]: [test_exec_result, string]):
         Fail: (x: test_exec_error) => (
         match (x, {
             Rejected: (x: [michelson_code, address]) => assert(Test.michelson_equal(x[0], expected_error2)),
-            Balance_too_low : (x : { contract_too_low : address , contract_balance : tez , spend_request : tez }) =>  failwith("contract failed: balance too low"),
+            Balance_too_low : (_ : test_exec_error_balance_too_low) =>  failwith("contract failed: balance too low"),
             Other: (s: string) => failwith(s)
         })),
-        Success: (n : nat) => failwith("Expected to fail but passed")
+        Success: (_ : nat) => failwith("Expected to fail but passed")
     });
 };
 
-let test = () : unit => {
+const test = () : unit => {
     // setup 4 accounts 
     let _ = Test.reset_state(4 as nat, (list([]) as list<tez>));
     const alice: address = Test.nth_bootstrap_account(0);
     const bob: address = Test.nth_bootstrap_account(1);
     const steven: address = Test.nth_bootstrap_account(2);
-    const frank: address = Test.nth_bootstrap_account(3);
+    const _frank: address = Test.nth_bootstrap_account(3);
 
     // originate Factory smart contract
     let initStorage : Factory.Storage.t = { 
@@ -60,7 +60,7 @@ let test = () : unit => {
             None: () => (list([]) as list<address>),
             Some: (x: list<address>) => x
         });
-        let ownedCollSize = List.fold( (([acc, elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
+        let ownedCollSize = List.fold( (([acc, _elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
         //let ownedCollSize : nat = Set.size colls in 
         assert (ownedCollSize == (1 as nat))
     };
@@ -101,7 +101,7 @@ let test = () : unit => {
     let _mint_token3_collection_1_should_fail = () : unit => {
         let _print = Test.log("_mint_token3_collection_1_should_fail");
 
-        let x : contract<Factory.parameter> = Test.to_contract(addr);
+        let _x : contract<Factory.parameter> = Test.to_contract(addr);
 
         // Retrieve address of collection 1
         let sBefore : Factory.storage = Test.get_storage(addr);
@@ -178,7 +178,7 @@ let test = () : unit => {
             Some: (x: list<address>) => x
         });
         //let ownedCollSize : nat = Set.size colls in 
-        let ownedCollSize = List.fold( ( ([acc, elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
+        let ownedCollSize = List.fold( ( ([acc, _elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
         let _tst = assert (ownedCollSize == (2 as nat));
 
         let parseMetas = ([acc, elt] : [big_map<address, [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]>, address]) : big_map<address, [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]> => { 
