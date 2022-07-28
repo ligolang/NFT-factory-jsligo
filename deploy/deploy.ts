@@ -3,7 +3,7 @@ import { TezosToolkit, MichelsonMap } from '@taquito/taquito';
 import factory from '../compiled/factory.json';
 import * as dotenv from 'dotenv'
 
-dotenv.config(({path:__dirname+'/.env'}))
+dotenv.config(({ path: __dirname + '/.env' }))
 
 const rpc = process.env.RPC;
 const pk: string = process.env.DEPLOYER_PK || undefined;
@@ -17,8 +17,9 @@ let factory_address = process.env.FACTORY_CONTRACT_ADDRESS || undefined;
 async function orig() {
 
     let factory_store = {
-        'all_collections' : new MichelsonMap(),
-        'owned_collections': new MichelsonMap(), 
+        'allCollections': new MichelsonMap(),
+        'ownedCollections': new MichelsonMap(),
+        'metadata': new MichelsonMap(),
     }
 
     try {
@@ -31,9 +32,9 @@ async function orig() {
             console.log(`Waiting for FACTORY ${factory_originated.contractAddress} to be confirmed...`);
             await factory_originated.confirmation(2);
             console.log('confirmed FACTORY: ', factory_originated.contractAddress);
-            factory_address = factory_originated.contractAddress;              
+            factory_address = factory_originated.contractAddress;
         }
-       
+
         console.log("./tezos-client remember contract FACTORY", factory_address)
 
     } catch (error: any) {
