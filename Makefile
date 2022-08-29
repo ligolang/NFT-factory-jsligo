@@ -1,6 +1,6 @@
-ligo_compiler=docker run --rm -v "$$PWD":"$$PWD" -w "$$PWD" ligolang/ligo:0.41.0
+ligo_compiler=docker run --rm -v "$$PWD":"$$PWD" -w "$$PWD" ligolang/ligo:0.47.0
 PROJECTROOT_OPT=--project-root .
-PROTOCOL_OPT=--protocol ithaca
+PROTOCOL_OPT=--protocol jakarta
 JSON_OPT=--michelson-format json
 
 help:
