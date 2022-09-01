@@ -1,2 +1,7 @@
 /compiled
 **/compiled
+**/node_modules
+.DS_Store
+.ligo/
+_esy/
+/deploy/deploy.js
