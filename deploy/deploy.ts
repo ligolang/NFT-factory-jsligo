@@ -6,12 +6,11 @@ import * as dotenv from 'dotenv'
 dotenv.config(({ path: __dirname + '/.env' }))
 
 const rpc = process.env.RPC;
-const pk: string = process.env.DEPLOYER_PK || undefined;
+const pk: string = process.env.ADMIN_PK || undefined;
 const Tezos = new TezosToolkit(rpc);
 const signer = new InMemorySigner(pk);
 Tezos.setProvider({ signer: signer })
 
-const admin = process.env.ADMIN_ADDRESS;
 let factory_address = process.env.FACTORY_CONTRACT_ADDRESS || undefined;
 
 async function orig() {
@@ -39,6 +38,7 @@ async function orig() {
 
     } catch (error: any) {
         console.log(error)
+        return process.exit(1)
     }
 }
 
