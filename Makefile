@@ -1,10 +1,10 @@
-ligo_compiler=docker run --rm -v "$(PWD)":"$(PWD)" -w "$(PWD)" ligolang/ligo:stable
+ligo_compiler?=docker run --rm -v "$(PWD)":"$(PWD)" -w "$(PWD)" ligolang/ligo:stable
 # ^ Override this variable when you run make command by make <COMMAND> ligo_compiler=<LIGO_EXECUTABLE>
 # ^ Otherwise use default one (you'll need docker)
-PROJECTROOT_OPT=--project-root .
-PROTOCOL_OPT=
-JSON_OPT=--michelson-format json
-tsc=npx tsc
+PROJECTROOT_OPT?=--project-root .
+PROTOCOL_OPT?=
+JSON_OPT?=--michelson-format json
+tsc?=npx tsc
 help:
 	@echo  'Usage:'
 	@echo  '  all             - Remove generated Michelson files, recompile smart contracts and lauch all tests'
