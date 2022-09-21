@@ -1,7 +1,7 @@
 ## Contract VIN (Vinus In Numeris)
 
 This contract implements a factory of FA2 NFT. Each FA2 contract represents a collection of wine bottles. Wine bottles are represented by tokens inside a FA2 contract.
-When originating a collection of bottle, 
+When originating a collection of bottle,
 - the creator must specify a collection name and a QR code for each bottle.
 - the creator owns all bottles of the collection
 
@@ -11,10 +11,10 @@ A bottle owner can transfer one or more bottle to someone else (with the *Transf
 
 
 A collection of bottles is represented by a FA2 contract. The implementation of the FA2 introduces:
-- a admin address on the storage which represents the creator of the FA2 contract 
+- a admin address on the storage which represents the creator of the FA2 contract
 - a *Mint* entrypoint that allows the creator of the FA2 to create new tokens inside the NFT contract
 - a *token_usage* map that count the number of transfer of a bottle
-- a *token_usage* view for retrieving the number of transfer of a bottle (for a given token_id) 
+- a *token_usage* view for retrieving the number of transfer of a bottle (for a given token_id)
 
 ![](wine_factory.png)
 
@@ -25,6 +25,11 @@ A makefile is provided to compile the "Factory" smart contract, and to launch te
 cd src/cameligo/
 make compile
 make test
+```
+
+You can also override `make` parameters by running :
+```sh
+make compile ligo_compiler=<LIGO_EXECUTABLE> PROTOCOL_OPT="--protocol <PROTOCOL>"
 ```
 
 ### Tests
