@@ -93,7 +93,7 @@ const _test = () : unit => {
         let marketplaceContract : contract<Marketplace.parameter> = Test.to_contract (marketplace_taddr);
         let marketplaceAddress  = Tezos.address (marketplaceContract);
         let fa2Contract : contract<Factory.NFT_FA2.parameter> = Test.to_contract (taddrFa2Address);
-        let updateOperatorsParam : Factory.NFT_FA2.NFT.update_operators = list([Add_operator({owner:alice, operator:marketplaceAddress, token_id:(1 as nat)})]);
+        let updateOperatorsParam = list([(Add_operator({owner:alice, operator:marketplaceAddress, token_id:(1 as nat)}) as Factory.NFT_FA2.NFT.unit_update)]);
         _exec = Test.transfer_to_contract_exn(fa2Contract, (Update_operators(updateOperatorsParam)), 0 as mutez);
 
         // alice Sell token1
