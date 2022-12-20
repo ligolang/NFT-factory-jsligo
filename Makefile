@@ -20,25 +20,25 @@ compile: fa2_nft.tz factory marketplace_nft.tz
 
 factory: factory.tz factory.json
 
-factory.tz: contracts/main.jsligo
+factory.tz: src/main.jsligo
 	@echo "Compiling smart contract to Michelson"
 	@mkdir -p compiled
 	@$(ligo_compiler) compile contract $^ -e main $(protocol_opt) $(PROJECTROOT_OPT) > compiled/$@
 
-factory.json: contracts/main.jsligo
+factory.json: src/main.jsligo
 	@echo "Compiling smart contract to Michelson in JSON format"
 	@mkdir -p compiled
 	@$(ligo_compiler) compile contract $^ $(JSON_OPT) -e main $(protocol_opt) $(PROJECTROOT_OPT) > compiled/$@
 
-fa2_nft.tz: contracts/generic_fa2/core/instance/NFT.mligo
+fa2_nft.tz: src/generic_fa2/core/instance/NFT.mligo
 	@echo "Compiling smart contract FA2 to Michelson"
-	@mkdir -p contracts/generic_fa2/compiled
-	@$(ligo_compiler) compile contract $^ -e main $(protocol_opt) $(PROJECTROOT_OPT) > contracts/generic_fa2/compiled/$@
+	@mkdir -p src/generic_fa2/compiled
+	@$(ligo_compiler) compile contract $^ -e main $(protocol_opt) $(PROJECTROOT_OPT) > src/generic_fa2/compiled/$@
 
-marketplace_nft.tz: contracts/marketplace/main.jsligo
+marketplace_nft.tz: src/marketplace/main.jsligo
 	@echo "Compiling smart contract Marketplace to Michelson"
-	@mkdir -p contracts/marketplace/compiled
-	@$(ligo_compiler) compile contract $^ -e main $(protocol_opt) $(PROJECTROOT_OPT) > contracts/marketplace/compiled/$@
+	@mkdir -p src/marketplace/compiled
+	@$(ligo_compiler) compile contract $^ -e main $(protocol_opt) $(PROJECTROOT_OPT) > src/marketplace/compiled/$@
 
 clean: clean_contracts clean_fa2 clean_marketplace
 
@@ -48,11 +48,11 @@ clean_contracts:
 
 clean_fa2:
 	@echo "Removing FA2 Michelson file"
-	@rm -f contracts/generic_fa2/compiled/*.tz
+	@rm -f src/generic_fa2/compiled/*.tz
 
 clean_marketplace:
 	@echo "Removing Marketplace Michelson file"
-	@rm -f contracts/marketplace/compiled/*.tz
+	@rm -f src/marketplace/compiled/*.tz
 
 
 test: test_ligo test_marketplace
@@ -65,13 +65,14 @@ test_marketplace: test/test_marketplace.jsligo
 	@echo "Running integration tests (marketplace)"
 	@$(ligo_compiler) run test $^ $(protocol_opt) $(PROJECTROOT_OPT)
 
-deploy: deploy_node_modules deploy.js
-	@echo "Deploying contract"
-	@node deploy/deploy.js
+deploy: node_modules deploy.js
 
 deploy.js:
-	@cd deploy && $(tsc) deploy.ts --resolveJsonModule -esModuleInterop
+	@if [ ! -f ./deploy/metadata.json ]; then cp deploy/metadata.json.dist deploy/metadata.json ; fi
+	@echo "Running deploy script\n"
+	@cd deploy && npm start
 
-deploy_node_modules:
-	@echo "Install node modules"
+node_modules:
+	@echo "Installing deploy script dependencies"
 	@cd deploy && npm install
+	@echo ""
