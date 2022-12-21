@@ -93,6 +93,11 @@ async function deploy() {
         chalk.yellow.bold(origination.contractAddress),
       endMessage: chalk.green`Contract confirmed!`,
     });
+
+    console.log(
+      chalk.green`\nContract address: \n- ` +
+        chalk.green.underline`${origination.contractAddress}`
+    );
   } catch (error: any) {
     console.log("");
     console.log(chalk.redBright`Error during deployment:`);
