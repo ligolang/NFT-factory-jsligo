@@ -1,5 +1,5 @@
 
-#import "../contracts/main.jsligo" "Factory"
+#import "../src/main.jsligo" "Factory"
 
 type fa2Storage = Factory.NFT_FA2.Storage.t;
 type ext = Factory.NFT_FA2.extension;

@@ -1,6 +1,6 @@
 
-#import "../contracts/main.jsligo" "Factory"
-#import "../contracts/marketplace/main.jsligo" "Marketplace"
+#import "../src/main.jsligo" "Factory"
+#import "../src/marketplace/main.jsligo" "Marketplace"
 
 type fa2_storage = Factory.NFT_FA2.Storage.t;
 type ext = Factory.NFT_FA2.extension;
