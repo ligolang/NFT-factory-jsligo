@@ -5,7 +5,7 @@ type fa2Storage = Factory.NFT_FA2.Storage.t;
 type ext = Factory.NFT_FA2.extension;
 type extFa2Storage = fa2Storage<ext>;
 
-const assertStringFailure = ([res, expected_error]: [test_exec_result, string]): unit => {
+const assertStringFailure = (res: test_exec_result, expected_error: string): unit => {
     const expected_error2 = Test.eval(expected_error);
     match(res, {
         Fail: (x: test_exec_error) => (
@@ -96,7 +96,7 @@ const test = () : unit => {
         //let () = Test.log("check new token 2");
         let fa21S : extFa2Storage = Test.get_storage(taddr1);
         let _tst = assert( (Factory.NFT_FA2.Storage.is_owner_of(fa21S)(alice))(2 as nat) );
-        "OK"
+        return "OK"
     };
     let _mint_token3_collection_1_should_fail = () : unit => {
         let _print = Test.log("_mint_token3_collection_1_should_fail");
@@ -191,14 +191,14 @@ const test = () : unit => {
         // Retrieve collection 2 address
         //let colls_list : list<address> = Set.fold( ( ([acc, i] : [list<address>, address]) => [i, ...acc]), colls, (list([]) as list<address>));
         // find address of collection 2
-        let getNextAddress = ([lst, blacklist] : [list<address>, list<address>]) : address => {
+        let getNextAddress = (lst: list<address>, blacklist: list<address>) : address => {
             let filter = ([acc, elt] : [[list<address>, list<address>], address]) : [list<address>, list<address>] => { 
                 let isInList = ([res, i] : [[bool, address], address]) : [bool, address] => { if (res[0]) { return res } else { return [(i == res[1]), res[1]] } };
                 let [isBlacklisted, _] = List.fold(isInList, acc[1], [false, elt]);
                 if (isBlacklisted) { return acc } else { return [ list([elt, ...acc[0]]), acc[1]] }
             };
             let [filteredList, _] = List.fold(filter, lst, [(list([]) as list<address>), blacklist]);
-            Option.unopt (List.head_opt(filteredList))
+            return Option.unopt (List.head_opt(filteredList))
         };
         let address2 : address = getNextAddress(colls, collsBefore);
 
@@ -227,7 +227,7 @@ const test = () : unit => {
             Some: (info: Factory.NFT_FA2.NFT.TokenMetadata.data) => info
         });
         _tst = assert(collection2MetasTok4.token_info == (Map.literal( list([ ["QRcode", 0xdeadbeefdead], ["collection", collectionNameBytes] ])) as map<string, bytes>));
-        "OK" 
+        return "OK" 
     };
     let _transfer_token1_collection_2_should_works = () : string => {
         let _print = Test.log("_transfer_token1_collection_2_should_works");
@@ -267,7 +267,7 @@ const test = () : unit => {
         let fa22SAfter : extFa2Storage = Test.get_storage(taddr2);
         _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22SAfter))(steven))(1 as nat)) );
         _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22SAfter))(1 as nat)) == (2 as nat) );
-        "OK" 
+        return "OK" 
     };
     
     // execution

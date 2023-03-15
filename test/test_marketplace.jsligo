@@ -114,7 +114,7 @@ const _test = () : unit => {
 
         let fa2StoreAfter : ext_fa2_storage = Test.get_storage (taddrFa2Address);
         _tst = assert( ((Factory.NFT_FA2.Storage.is_owner_of(fa2StoreAfter))(bob))(1 as nat) );
-        "OK"
+        return "OK"
     };
 
     const _exec = _generates_collection_1_should_works();
