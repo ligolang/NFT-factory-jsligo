@@ -7,7 +7,7 @@ type storage = Storage.t;
 export type parameter = Parameter.t;
 type return_ = [list<operation>, storage];
 
-const create_sell_proposal = ([param, store] : [Parameter.sell_proposal_param, Storage.t]) : return_ => {
+const create_sell_proposal = (param: Parameter.sell_proposal_param, store: Storage.t) : return_ => {
     // check if sender is the owner of the nft token
     let balanceOpt : option<nat> = Tezos.call_view("get_balance", [Tezos.get_sender (), param.token_id], param.collectionContract);
     let balanceVal : nat = match(balanceOpt, {
@@ -29,7 +29,7 @@ const create_sell_proposal = ([param, store] : [Parameter.sell_proposal_param, S
     return [(list([]) as list<operation>), { ...store, next_sell_id:new_next_sell_id, sell_proposals:new_proposals, active_proposals:new_active_proposals }];
 };
 
-const accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : return_ => {
+const accept_proposal = (param: Parameter.buy_param, store: Storage.t) : return_ => {
     let _check_among_active_proposals : unit = assert_with_error( (Set.mem(param.proposal_id, store.active_proposals)), Errors.proposal_not_active); 
     let propal : Storage.sell_proposal = match(Big_map.find_opt(param.proposal_id, store.sell_proposals), {
         None: () => (failwith(Errors.unknown_proposal) as Storage.sell_proposal),
@@ -62,12 +62,11 @@ const accept_proposal = ([param, store] : [Parameter.buy_param, Storage.t]) : re
     return [list([op, op2]), { ...store,  sell_proposals:new_proposals, active_proposals:new_active_proposals }]
 };
 
-export const main = ([ep, store] : [parameter, storage]) : return_ => {
+export const main = (ep: parameter, store: storage) : return_ =>
     match(ep, { 
         Sell: (p: sell_proposal_param) => create_sell_proposal(p, store),
         Buy: (p: buy_param) => accept_proposal(p, store)
     });
-};
 
 // @view
 const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => { 
@@ -78,6 +77,6 @@ const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => {
 };
 
 // @view
-const active_proposals = ([_p, s] : [unit, storage]) : list<nat> => { 
+const active_proposals = ([_p, s] : [unit, storage]) : list<nat> =>
     Set.fold( ( ([acc, i] : [list<nat>, nat]) => list([i, ...acc])), s.active_proposals, (list([]) as list<nat>) );
-};
+

@@ -10,7 +10,7 @@ type store = NFT_FA2.Storage.t;
 type ext = NFT_FA2.extension;
 type extStorage = store<ext>;
 
-const generateCollection = ([param, store] : [Parameter.generateCollectionParam, Storage.t]) : return_ => {
+const generateCollection = (param: Parameter.generateCollectionParam, store: Storage.t) : return_ => {
     // create new collection
     let tokenIds = param.tokenIds;
     let ledger = (Big_map.empty as NFT_FA2.Storage.Ledger.t);
@@ -49,7 +49,7 @@ const generateCollection = ([param, store] : [Parameter.generateCollectionParam,
             as ((p: [option<key_hash>, tez, extStorage]) => [operation, address]) )(p)
    ;
 
-    let originate : [operation, address] = createMyContract(initialDelegate, initialAmount, initialStorage);
+    let originate : [operation, address] = createMyContract([initialDelegate, initialAmount, initialStorage]);
     // insert into collections
     let newAllCollections = Big_map.add(originate[1], Tezos.get_sender (), store.allCollections);
     // insert into ownedCollections
@@ -60,9 +60,8 @@ const generateCollection = ([param, store] : [Parameter.generateCollectionParam,
     return [list([originate[0]]), { ...store, allCollections:newAllCollections, ownedCollections:newOwnedCollections}];
 };
 
-export const main = ([ep, store] : [parameter, storage]) : return_ => {
+export const main = (ep: parameter, store: storage) : return_ =>
     match(ep, { 
       GenerateCollection: (p: Parameter.generateCollectionParam) => generateCollection(p, store),
       Nothing: () => [(list([]) as list<operation>), store]
     });
-};
