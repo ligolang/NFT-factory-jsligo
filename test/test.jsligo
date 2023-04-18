@@ -10,7 +10,7 @@ const assertStringFailure = (res: test_exec_result, expected_error: string): uni
     match(res, {
         Fail: (x: test_exec_error) => (
         match (x, {
-            Rejected: (x: [michelson_code, address]) => assert(Test.michelson_equal(x[0], expected_error2)),
+            Rejected: (x: [michelson_program, address]) => assert(Test.michelson_equal(x[0], expected_error2)),
             Balance_too_low : (_ : test_exec_error_balance_too_low) =>  failwith("contract failed: balance too low"),
             Other: (s: string) => failwith(s)
         })),
@@ -207,26 +207,26 @@ const test = () : unit => {
             None: () => (failwith("No metadata for collection 1") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]),
             Some: (info: [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]) => info
         });
-        _tst = assert( collection1Info[0] == list([(2 as nat), (1 as nat)]) );
+        assert( collection1Info[0] == list([(2 as nat), (1 as nat)]) );
         // verify tokenIds of collection 2 
         let collection2Info : [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t] = match(Big_map.find_opt(address2, allTokens), {
             None: () => (failwith("No metadata for collection 2") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]),
             Some: (info: [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]) => info
         });
-        let _tst = assert( collection2Info[0] == list([(1 as nat), (2 as nat), (3 as nat), (4 as nat), (5 as nat)]) );
+        assert( collection2Info[0] == list([(1 as nat), (2 as nat), (3 as nat), (4 as nat), (5 as nat)]) );
         // verify metadata of token 3 of collection 2
         let collection2Metas : Factory.NFT_FA2.NFT.TokenMetadata.t = collection2Info[1];
         let collection2MetasTok3 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((3 as nat), collection2Metas), {
             None: () => (failwith("No token 3 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data),
             Some: (info: Factory.NFT_FA2.NFT.TokenMetadata.data) => info
         });
-        let _ass = assert(collection2MetasTok3.token_info == (Map.literal( list([ ["QRcode", 0xab3442eff132], ["collection", collectionNameBytes] ])) as map<string, bytes>));
+        assert(collection2MetasTok3.token_info == (Map.literal( list([ ["QRcode", 0xab3442eff132], ["collection", collectionNameBytes] ])) as map<string, bytes>));
         // verify metadata of token 4 of collection 2
         let collection2MetasTok4 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((4 as nat), collection2Metas), {
             None: () => (failwith("No token 4 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data),
             Some: (info: Factory.NFT_FA2.NFT.TokenMetadata.data) => info
         });
-        _tst = assert(collection2MetasTok4.token_info == (Map.literal( list([ ["QRcode", 0xdeadbeefdead], ["collection", collectionNameBytes] ])) as map<string, bytes>));
+        assert(collection2MetasTok4.token_info == (Map.literal( list([ ["QRcode", 0xdeadbeefdead], ["collection", collectionNameBytes] ])) as map<string, bytes>));
         return "OK" 
     };
     let _transfer_token1_collection_2_should_works = () : string => {
@@ -239,34 +239,39 @@ const test = () : unit => {
         });
         let address2 : address = Option.unopt (List.head_opt(collsBefore));
 
-        _print = Test.log("alice transfer tok 1 to bob");
-        let _src = Test.set_source(alice);
         let taddr2 = (Test.cast_address(address2) as typed_address<Factory.NFT_FA2.parameter, extFa2Storage> );
-        let fa22 : contract<Factory.NFT_FA2.parameter> = Test.to_contract(taddr2);
-        let transfer1Args : Factory.NFT_FA2.NFT.transfer = list([{ from_:alice, tx: list([{to_:bob, token_id:(1 as nat)}]) }]);
-        let _exec = Test.transfer_to_contract_exn(fa22, (Transfer(transfer1Args)), 0 as mutez);
+        {
+          let _src = Test.set_source(alice);
+          _print = Test.log("alice transfer tok 1 to bob");
+          let fa22 : contract<Factory.NFT_FA2.parameter> = Test.to_contract(taddr2);
+          let transfer1Args : Factory.NFT_FA2.NFT.transfer = list([{ from_:alice, tx: list([{to_:bob, token_id:(1 as nat)}]) }]);
+          let _exec = Test.transfer_to_contract_exn(fa22, (Transfer(transfer1Args)), 0 as mutez);
 
-        let fa22S : extFa2Storage = Test.get_storage(taddr2);
-        let _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(bob))(1 as nat)) );
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(1 as nat)) == (1 as nat) );
-        _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(2 as nat)) ); 
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(2 as nat)) == (0 as nat) );
-        _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(3 as nat)) );
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(3 as nat)) == (0 as nat) );
-        _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(4 as nat)) );
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(4 as nat)) == (0 as nat) );
-        _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(5 as nat)) );
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(5 as nat)) == (0 as nat) );
+          let fa22S : extFa2Storage = Test.get_storage(taddr2);
+          assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(bob))(1 as nat)) );
+          assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(1 as nat)) == (1 as nat) );
+          assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(2 as nat)) ); 
+          assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(2 as nat)) == (0 as nat) );
+          assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(3 as nat)) );
+          assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(3 as nat)) == (0 as nat) );
+          assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(4 as nat)) );
+          assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(4 as nat)) == (0 as nat) );
+          assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22S))(alice))(5 as nat)) );
+          assert( ((Factory.NFT_FA2.get_usage_of(fa22S))(5 as nat)) == (0 as nat) );
+        };
 
         _print = Test.log("bob transfer tok 1 to steven");
-        _src = Test.set_source(bob);
+        {
+        let _src = Test.set_source(bob);
         let fa22 : contract<Factory.NFT_FA2.parameter> = Test.to_contract(taddr2);
         let transfer1Args : Factory.NFT_FA2.NFT.transfer = list([{ from_:bob, tx:list([{to_:steven, token_id:(1 as nat)}]) }]);
-        _exec = Test.transfer_to_contract_exn(fa22, (Transfer(transfer1Args)), 0 as mutez);
+        let _exec = Test.transfer_to_contract_exn(fa22, (Transfer(transfer1Args)), 0 as mutez);
 
         let fa22SAfter : extFa2Storage = Test.get_storage(taddr2);
-        _tst = assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22SAfter))(steven))(1 as nat)) );
-        _tst = assert( ((Factory.NFT_FA2.get_usage_of(fa22SAfter))(1 as nat)) == (2 as nat) );
+        assert( (((Factory.NFT_FA2.Storage.is_owner_of(fa22SAfter))(steven))(1 as nat)) );
+        assert( ((Factory.NFT_FA2.get_usage_of(fa22SAfter))(1 as nat)) == (2 as nat) );
+        };
+
         return "OK" 
     };
     

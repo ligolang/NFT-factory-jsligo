@@ -64,8 +64,8 @@ const accept_proposal = (param: Parameter.buy_param, store: Storage.t) : return_
 
 export const main = (ep: parameter, store: storage) : return_ =>
     match(ep, { 
-        Sell: (p: sell_proposal_param) => create_sell_proposal(p, store),
-        Buy: (p: buy_param) => accept_proposal(p, store)
+        Sell: (p) => create_sell_proposal(p, store),
+        Buy: (p) => accept_proposal(p, store)
     });
 
 // @view
