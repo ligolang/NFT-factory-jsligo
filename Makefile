@@ -3,7 +3,7 @@ ligo_compiler?=docker run --rm -v "$(PWD)":"$(PWD)" -w "$(PWD)" ligolang/ligo:st
 # ^ Otherwise use default one (you'll need docker)
 PROJECTROOT_OPT=--project-root .
 protocol_opt?=
-JSON_OPT?=--michelson-format json
+json_opt?=--michelson-format json
 tsc=npx tsc
 help:
 	@echo  'Usage:'
@@ -28,7 +28,7 @@ factory.tz: src/main.jsligo
 factory.json: src/main.jsligo
 	@echo "Compiling smart contract to Michelson in JSON format"
 	@mkdir -p compiled
-	@$(ligo_compiler) compile contract $^ $(JSON_OPT) -e main $(protocol_opt) $(PROJECTROOT_OPT) > compiled/$@
+	@$(ligo_compiler) compile contract $^ $(json_opt) -e main $(protocol_opt) $(PROJECTROOT_OPT) > compiled/$@
 
 fa2_nft.tz: src/generic_fa2/core/instance/NFT.mligo
 	@echo "Compiling smart contract FA2 to Michelson"
