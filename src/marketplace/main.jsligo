@@ -67,6 +67,7 @@ const accept_proposal = (param: Parameter.buy_param, store: Storage.t) : return_
     return [list([op, op2]), { ...store,  sell_proposals:new_proposals, active_proposals:new_active_proposals }]
 };
 
+@entry
 export const main = (ep: parameter, store: storage) : return_ =>
     match(ep) { 
         when(Sell(p)) : create_sell_proposal(p, store);
@@ -80,6 +81,8 @@ const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => {
         when(None()) : (failwith(""));
         when(Some(prop)) : prop 
     };
+
+    return ret_proposal
 };
 
 // @view
