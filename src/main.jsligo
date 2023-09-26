@@ -38,18 +38,8 @@ const generateCollection = (param: Parameter.generateCollectionParam, store: Sto
 
     let initialDelegate : option<key_hash> = (None() as option<key_hash>);
     let initialAmount : tez = 1 as tez;
-    let createMyContract = (p: [option<key_hash>, tez, extStorage]) : [operation, address] =>
-      (Michelson `{ 
-            UNPAIR ;
-            UNPAIR ;
-            CREATE_CONTRACT 
-#include "generic_fa2/compiled/fa2_nft.tz"  
-               ;
-            PAIR }`
-            as ((p: [option<key_hash>, tez, extStorage]) => [operation, address]) )(p)
-   ;
-
-    let originate : [operation, address] = createMyContract([initialDelegate, initialAmount, initialStorage]);
+    let createMyContract = (op : option<key_hash>, ltez : tez, s : extStorage) : [operation, address] => (create_contract_of_file `generic_fa2/compiled/fa2_nft.tz`)(op, ltez, s);
+    let originate : [operation, address] = createMyContract(initialDelegate, initialAmount, initialStorage);
     // insert into collections
     let newAllCollections = Big_map.add(originate[1], Tezos.get_sender (), store.allCollections);
     // insert into ownedCollections
