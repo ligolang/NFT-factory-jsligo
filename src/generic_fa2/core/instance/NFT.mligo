@@ -84,7 +84,8 @@ type parameter = [@layout:comb]
 | Update_operators of NFT.update_operators 
 | Mint of mint_param
 
-let main ((p,s):(parameter * extension storage)) : operation list * extension storage = 
+[@entry]
+let main (p : parameter) (s : extension storage) : operation list * extension storage = 
 match p with
    Transfer         p -> let o1, s = NFT.transfer p s in
                          let o2, s = transfer_extension p s in
@@ -95,23 +96,23 @@ match p with
 |  Mint             p -> let _ = authorize_extension s in 
                          mint p s
 
-[@view] let token_usage ((p, s) : (nat * extension storage)): nat =
+[@view] let token_usage (p : nat) (s : extension storage): nat =
       TokenUsage.get_token_usage p s.extension.token_usage
 
-[@view] let get_balance (p, s : (Address.t * nat) * extension storage) : nat = 
+[@view] let get_balance (p  : Address.t * nat) (s : extension storage) : nat = 
       let (owner, token_id) = p in
       let balance_ = NFT.Storage.get_balance s owner token_id in
       balance_
 
-[@view] let total_supply ((token_id, s) : (nat * extension storage)):  nat =
+[@view] let total_supply (token_id : nat) (s : extension storage) :  nat =
       let () = NFT.Storage.assert_token_exist s token_id in
       1n
 
-[@view] let all_tokens ((_, s) : (unit * extension storage)): nat list =
+[@view] let all_tokens (_  : unit) (s : extension storage): nat list =
    s.token_ids
    
-[@view] let is_operator ((op, s) : (NFT.operator * extension storage)): bool =
+[@view] let is_operator (op  : NFT.operator) (s : extension storage) : bool =
       NFT.Operators.is_operator (s.operators, op.owner, op.operator, op.token_id)
 
-[@view] let token_metadata ((p, s) : (nat * extension storage)): NFT.TokenMetadata.data = 
+[@view] let token_metadata (p : nat) (s : extension storage) : NFT.TokenMetadata.data = 
       NFT.TokenMetadata.get_token_metadata p s.token_metadata

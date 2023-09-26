@@ -53,15 +53,18 @@ const generateCollection = (param: Parameter.generateCollectionParam, store: Sto
     // insert into collections
     let newAllCollections = Big_map.add(originate[1], Tezos.get_sender (), store.allCollections);
     // insert into ownedCollections
-    let newOwnedCollections = match(Big_map.find_opt(Tezos.get_sender (), store.ownedCollections), {
-      None: () => Big_map.add( Tezos.get_sender (), (list([originate[1]]) as list<address>), store.ownedCollections),
-      Some: (addrLst: list<address>) => Big_map.update( Tezos.get_sender (), (Some( list([originate[1], ...addrLst]) )), store.ownedCollections)
-    });
+    let newOwnedCollections = 
+      match (Big_map.find_opt(Tezos.get_sender (), store.ownedCollections)) {
+        when(None()) : Big_map.add( Tezos.get_sender (), (list([originate[1]]) as list<address>), store.ownedCollections);
+        when(Some(addrLst)) : Big_map.update( Tezos.get_sender (), (Some( list([originate[1], ...addrLst]) )), store.ownedCollections);
+      };
+    
     return [list([originate[0]]), { ...store, allCollections:newAllCollections, ownedCollections:newOwnedCollections}];
 };
 
+@entry
 export const main = (ep: parameter, store: storage) : return_ =>
-    match(ep, { 
-      GenerateCollection: (p: Parameter.generateCollectionParam) => generateCollection(p, store),
-      Nothing: () => [(list([]) as list<operation>), store]
-    });
+    match (ep) { 
+      when(GenerateCollection(p)) : generateCollection(p, store);
+      when(Nothing()) : [(list([]) as list<operation>), store]
+    };
