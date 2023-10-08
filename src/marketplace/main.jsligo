@@ -4,10 +4,12 @@
 #import "../generic_fa2/core/instance/NFT.mligo" "NFT_FA2"
 
 type storage = Storage.t;
-export type parameter = Parameter.t;
+export type parameter_sell = Parameter.sell_proposal_param;
+export type parameter_buy = Parameter.buy_param;
 type return_ = [list<operation>, storage];
 
-const create_sell_proposal = (param: Parameter.sell_proposal_param, store: Storage.t) : return_ => {
+@entry
+const create_sell_proposal = (param: parameter_sell, store: Storage.t) : return_ => {
     // check if sender is the owner of the nft token
     let balanceOpt : option<nat> = Tezos.call_view("get_balance", [Tezos.get_sender (), param.token_id], param.collectionContract);
     let balanceVal : nat = 
@@ -31,7 +33,8 @@ const create_sell_proposal = (param: Parameter.sell_proposal_param, store: Stora
     return [(list([]) as list<operation>), { ...store, next_sell_id:new_next_sell_id, sell_proposals:new_proposals, active_proposals:new_active_proposals }];
 };
 
-const accept_proposal = (param: Parameter.buy_param, store: Storage.t) : return_ => {
+@entry
+const accept_proposal = (param: parameter_buy, store: Storage.t) : return_ => {
     let _check_among_active_proposals : unit = assert_with_error( (Set.mem(param.proposal_id, store.active_proposals)), Errors.proposal_not_active); 
     let propal : Storage.sell_proposal = 
         match(Big_map.find_opt(param.proposal_id, store.sell_proposals)) {
@@ -67,15 +70,8 @@ const accept_proposal = (param: Parameter.buy_param, store: Storage.t) : return_
     return [list([op, op2]), { ...store,  sell_proposals:new_proposals, active_proposals:new_active_proposals }]
 };
 
-@entry
-export const main = (ep: parameter, store: storage) : return_ =>
-    match(ep) { 
-        when(Sell(p)) : create_sell_proposal(p, store);
-        when(Buy(p)) : accept_proposal(p, store)
-    };
-
-// @view
-const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => { 
+@view
+const get_proposal = (p : nat, s : storage) : Storage.sell_proposal => { 
     const ret_proposal = 
         match(Big_map.find_opt(p, s.sell_proposals)) { 
         when(None()) : (failwith(""));
@@ -85,7 +81,7 @@ const get_proposal = ([p, s] : [nat, storage]) : Storage.sell_proposal => {
     return ret_proposal
 };
 
-// @view
-const active_proposals = ([_p, s] : [unit, storage]) : list<nat> =>
+@view
+const active_proposals = (_p : unit, s : storage) : list<nat> =>
     Set.fold( ( ([acc, i] : [list<nat>, nat]) => list([i, ...acc])), s.active_proposals, (list([]) as list<nat>) );
 

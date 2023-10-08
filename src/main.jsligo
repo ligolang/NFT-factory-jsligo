@@ -3,14 +3,15 @@
 #import "generic_fa2/core/instance/NFT.mligo" "NFT_FA2"
 
 export type storage = Storage.t;
-export type parameter = Parameter.t;
+export type parameter = Parameter.generateCollectionParam;
 export type return_ = [list<operation>, storage];
 
 type store = NFT_FA2.Storage.t;
 type ext = NFT_FA2.extension;
 type extStorage = store<ext>;
 
-const generateCollection = (param: Parameter.generateCollectionParam, store: Storage.t) : return_ => {
+@entry
+const generateCollection = (param: parameter, store: storage) : return_ => {
     // create new collection
     let tokenIds = param.tokenIds;
     let ledger = (Big_map.empty as NFT_FA2.Storage.Ledger.t);
@@ -53,8 +54,4 @@ const generateCollection = (param: Parameter.generateCollectionParam, store: Sto
 };
 
 @entry
-export const main = (ep: parameter, store: storage) : return_ =>
-    match (ep) { 
-      when(GenerateCollection(p)) : generateCollection(p, store);
-      when(Nothing()) : [(list([]) as list<operation>), store]
-    };
+const nothing = (_ : unit, store : storage) : return_ => [(list([])), store] 
