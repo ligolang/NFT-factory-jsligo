@@ -5,5 +5,3 @@ export type generateCollectionParam = {
     tokenIds : list<nat>,
     tokenMetas : NFT_FA2.NFT.TokenMetadata.t
 };
-
-export type t = ["GenerateCollection", generateCollectionParam] | ["Nothing"];

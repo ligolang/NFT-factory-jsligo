@@ -15,4 +15,3 @@ export type t = {
     active_proposals : set<nat>,
     sell_proposals : big_map<nat, sell_proposal> 
 };
-

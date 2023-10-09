@@ -8,19 +8,18 @@ type ext_fa2_storage = fa2_storage<ext>;
 
 const assertStringFailure = ([res, expected_error]: [test_exec_result, string]): unit => {
     const expected_error2 = Test.eval(expected_error);
-    match(res, {
-        Fail: (x: test_exec_error) => (
-        match (x, {
-            Rejected: (x: [michelson_program, address]) => assert(Test.michelson_equal(x[0], expected_error2)),
-            Balance_too_low : (_ : { contract_too_low : address , contract_balance : tez , spend_request : tez }) 
-                =>  failwith("contract failed: balance too low"),
-            Other: (s: string) => failwith(s)
-        })),
-        Success: (_ : nat) => failwith("Expected to fail but passed")
-    });
+    match(res) {
+        when(Fail(x)) : (
+        match (x) {
+            when(Rejected(x)) : assert(Test.michelson_equal(x[0], expected_error2));
+            when(Balance_too_low(_)) : failwith("contract failed: balance too low");
+            when(Other(s)) : failwith(s);
+        });
+        when(Success(_)) : failwith("Expected to fail but passed");
+    };
 };
 
-const _test = () : unit => {
+const test = do {
     // setup 4 accounts 
     let _ = Test.reset_state(4 as nat, (list([]) as list<tez>));
     const alice: address = Test.nth_bootstrap_account(0);
@@ -34,7 +33,8 @@ const _test = () : unit => {
         ownedCollections:(Big_map.empty as big_map<Factory.Storage.collectionOwner, list<Factory.Storage.collectionContract>> ),
         metadata: (Big_map.empty as big_map<string, bytes>)
     };
-    const [addr,_,_] = Test.originate(Factory.main, init_storage, 0 as tez);
+    const orig = Test.originate_from_file("../src/main.jsligo", init_storage, 0 as tez);
+    const addr = orig.addr;
 
     // originate Marketplace smart contract
     let marketplaceInitStorage : Marketplace.Storage.t = { 
@@ -42,13 +42,12 @@ const _test = () : unit => {
         active_proposals:(Set.empty as set<nat>),
         sell_proposals:(Big_map.empty as big_map<nat, Marketplace.Storage.sell_proposal>)
     };
-    const [marketplace_taddr,_,_] = Test.originate(Marketplace.main, marketplaceInitStorage, 0 as tez);
+    const marketplace_orig = Test.originate_from_file("../src/marketplace/main.jsligo", marketplaceInitStorage, 0 as tez);
+    const marketplace_addr = marketplace_orig.addr;
 
 
     let _generates_collection_1_should_works = () : string => { 
         let _print = Test.log("_generates_collection_1_should_works");
-
-        let x : contract<Factory.parameter> = Test.to_contract(addr);
 
         // prepare arguments for generating a new collection
         let tokenIds : list<nat> = list([ 1 as nat]);
@@ -63,14 +62,14 @@ const _test = () : unit => {
         // call GenerateCollection entrypoint
         let _src = Test.set_source(alice);
         let gencolArgs : Factory.Parameter.generateCollectionParam = { name:"alice_collection_1", tokenIds:tokenIds, tokenMetas:tokenMetadata };
-        let _exec = Test.transfer_to_contract_exn(x, (GenerateCollection(gencolArgs)), (1000000 as mutez));
+        let _exec = Test.transfer_exn(addr, (GenerateCollection(gencolArgs) as parameter_of Factory), (1000000 as mutez));
 
         // verify FA2 has been created
         let s : Factory.storage = Test.get_storage(addr);
-        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x;
+        };
         let ownedCollSize = List.fold( ( ([acc, _elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
         //let ownedCollSize : nat = Set.size colls in 
         let _tst = assert (ownedCollSize == (1 as nat));
@@ -79,10 +78,10 @@ const _test = () : unit => {
         _print = Test.log("_marketplace_sell_token1_should_works");
         // retrieve address collection
         let storageBefore : Factory.storage = Test.get_storage(addr);
-        let collsBefore : list<address> = match(Big_map.find_opt(alice, storageBefore.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let collsBefore : list<address> = match(Big_map.find_opt(alice, storageBefore.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x;
+        };
         let fa2Address : address = Option.unopt (List.head_opt(collsBefore));
         let taddrFa2Address = (Test.cast_address(fa2Address) as typed_address<Factory.NFT_FA2.parameter, ext_fa2_storage>);
         let fa2Store : ext_fa2_storage = Test.get_storage (taddrFa2Address);
@@ -90,8 +89,7 @@ const _test = () : unit => {
 
         // APPROVE marketplace to transfer token 1
         _src = Test.set_source (alice);
-        let marketplaceContract : contract<Marketplace.parameter> = Test.to_contract (marketplace_taddr);
-        let marketplaceAddress  = Tezos.address (marketplaceContract);
+        let marketplaceAddress  = Test.to_address (marketplace_addr);
         let fa2Contract : contract<Factory.NFT_FA2.parameter> = Test.to_contract (taddrFa2Address);
         let updateOperatorsParam = list([(Add_operator({owner:alice, operator:marketplaceAddress, token_id:(1 as nat)}) as Factory.NFT_FA2.NFT.unit_update)]);
         _exec = Test.transfer_to_contract_exn(fa2Contract, (Update_operators(updateOperatorsParam)), 0 as mutez);
@@ -103,14 +101,14 @@ const _test = () : unit => {
             price:1 as tez
         };
         _src = Test.set_source (alice);
-        _exec = Test.transfer_to_contract_exn(marketplaceContract, (Sell(sellArgs)), 0 as mutez);
+        _exec = Test.transfer_exn(marketplace_addr, (Create_sell_proposal(sellArgs) as parameter_of Marketplace), 0 as mutez);
 
         // bob Buy token1
         let buyArgs : Marketplace.Parameter.buy_param = { 
             proposal_id:0 as nat
         };
-        let _src = Test.set_source (bob);
-        _exec = Test.transfer_to_contract_exn(marketplaceContract, (Buy(buyArgs)), 1000000 as mutez);
+        let _src_bob = Test.set_source (bob);
+        _exec = Test.transfer_exn(marketplace_addr, (Accept_proposal(buyArgs) as parameter_of Marketplace), 1000000 as mutez);
 
         let fa2StoreAfter : ext_fa2_storage = Test.get_storage (taddrFa2Address);
         _tst = assert( ((Factory.NFT_FA2.Storage.is_owner_of(fa2StoreAfter))(bob))(1 as nat) );
@@ -119,5 +117,3 @@ const _test = () : unit => {
 
     const _exec = _generates_collection_1_should_works();
 };
-
-const test = _test();

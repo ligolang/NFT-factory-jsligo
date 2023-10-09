@@ -7,15 +7,15 @@ type extFa2Storage = fa2Storage<ext>;
 
 const assertStringFailure = (res: test_exec_result, expected_error: string): unit => {
     const expected_error2 = Test.eval(expected_error);
-    match(res, {
-        Fail: (x: test_exec_error) => (
-        match (x, {
-            Rejected: (x: [michelson_program, address]) => assert(Test.michelson_equal(x[0], expected_error2)),
-            Balance_too_low : (_ : test_exec_error_balance_too_low) =>  failwith("contract failed: balance too low"),
-            Other: (s: string) => failwith(s)
-        })),
-        Success: (_ : nat) => failwith("Expected to fail but passed")
-    });
+    match(res) {
+        when(Fail(x)) : (
+        match (x) {
+            when(Rejected(x)) : assert(Test.michelson_equal(x[0], expected_error2));
+            when(Balance_too_low(_)) : failwith("contract failed: balance too low");
+            when(Other(s)) : failwith(s)
+        });
+        when(Success(_)) : failwith("Expected to fail but passed")
+    };
 };
 
 const test = () : unit => {
@@ -32,12 +32,12 @@ const test = () : unit => {
         ownedCollections:(Big_map.empty as big_map<Factory.Storage.collectionOwner, list<Factory.Storage.collectionContract>> ),
         metadata: (Big_map.empty as big_map<string, bytes>)
     };
-    const [addr,_,_] = Test.originate(Factory.main, initStorage, 0 as tez);
+    const orig = Test.originate_from_file("../src/main.jsligo", initStorage, 0 as tez);
+    const addr = orig.addr;
 
     let _generates_collection_1_should_works = () : unit => {
         let _print = Test.log("_generates_collection_1_should_works");
 
-        let x : contract<Factory.parameter> = Test.to_contract(addr);
 
         // prepare arguments for generating a new collection
         let tokenIds : list<nat> = list([(1 as nat)]);
@@ -52,14 +52,14 @@ const test = () : unit => {
         // call GenerateCollection entrypoint
         let _src = Test.set_source(alice);
         let gencolArgs : Factory.Parameter.generateCollectionParam = {name:"alice_collection_1", tokenIds:tokenIds, tokenMetas:tokenMetadata};
-        let _ = Test.transfer_to_contract_exn(x, (GenerateCollection(gencolArgs)), (1000000 as mutez));
+        let _ = Test.transfer_exn(addr, (GenerateCollection(gencolArgs) as parameter_of Factory), (1000000 as mutez));
 
         // verify FA2 has been created
         let s : Factory.storage = Test.get_storage(addr);
-        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x
+        };
         let ownedCollSize = List.fold( (([acc, _elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
         //let ownedCollSize : nat = Set.size colls in 
         assert (ownedCollSize == (1 as nat))
@@ -71,10 +71,10 @@ const test = () : unit => {
 
         // Retrieve address of collection 1
         let sBefore : Factory.storage = Test.get_storage(addr);
-        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (oc: list<address>) => oc
-        });
+        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(oc)) : oc;
+        };
         //let collsBeforeList : address list = Set.fold (fun(acc, i : address list * address) -> i :: acc) collsBefore ([] : address list);
         let address1 : address = Option.unopt (List.head_opt(collsBefore));
 
@@ -101,14 +101,12 @@ const test = () : unit => {
     let _mint_token3_collection_1_should_fail = () : unit => {
         let _print = Test.log("_mint_token3_collection_1_should_fail");
 
-        let _x : contract<Factory.parameter> = Test.to_contract(addr);
-
         // Retrieve address of collection 1
         let sBefore : Factory.storage = Test.get_storage(addr);
-        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (oc: list<address>) => oc
-        });
+        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(oc)) : oc
+        };
         //let collsBeforeList : address list = Set.fold (fun(acc, i : address list * address) -> i :: acc) collsBefore ([] : address list);
         let address1 : address = Option.unopt (List.head_opt(collsBefore));
 
@@ -132,14 +130,13 @@ const test = () : unit => {
         let _print = Test.log("_generates_collection_2_with_5_tokens_should_works");
         // check existing collections
         let sBefore : Factory.storage = Test.get_storage(addr);
-        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x;
+        };
         //let collsBeforeList : address list = Set.fold (fun(acc, i : address list * address) -> i :: acc) collsBefore ([] : address list);
         let address1 : address = Option.unopt (List.head_opt(collsBefore));
 
-        let x : contract<Factory.parameter> = Test.to_contract(addr);
 
         //let () = Test.log("alice generates a collection 2");
         let _src = Test.set_source(alice);
@@ -169,14 +166,14 @@ const test = () : unit => {
 
         // generate collection
         let gencolArgs : Factory.Parameter.generateCollectionParam = {name:"alice_collection_1", tokenIds:tokenIds, tokenMetas:newTokenMetadata};
-        let _ = Test.transfer_to_contract_exn(x, (GenerateCollection(gencolArgs)), 1000000 as mutez);
+        let _ = Test.transfer_exn(addr, (GenerateCollection(gencolArgs) as parameter_of Factory), 1000000 as mutez);
 
         let s : Factory.storage = Test.get_storage(addr);
         // verify number of collections
-        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let colls : list<address> = match(Big_map.find_opt(alice, s.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x;
+        };
         //let ownedCollSize : nat = Set.size colls in 
         let ownedCollSize = List.fold( ( ([acc, _elt] : [nat, address]) : nat => acc + (1 as nat)), colls, (0 as nat));
         let _tst = assert (ownedCollSize == (2 as nat));
@@ -203,29 +200,29 @@ const test = () : unit => {
         let address2 : address = getNextAddress(colls, collsBefore);
 
         // verify tokenIds of collection 1
-        let collection1Info : [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t] = match(Big_map.find_opt(address1, allTokens), {
-            None: () => (failwith("No metadata for collection 1") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]),
-            Some: (info: [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]) => info
-        });
+        let collection1Info : [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t] = match(Big_map.find_opt(address1, allTokens)) {
+            when(None()) : (failwith("No metadata for collection 1") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]);
+            when(Some(info)) : info;
+        };
         assert( collection1Info[0] == list([(2 as nat), (1 as nat)]) );
         // verify tokenIds of collection 2 
-        let collection2Info : [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t] = match(Big_map.find_opt(address2, allTokens), {
-            None: () => (failwith("No metadata for collection 2") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]),
-            Some: (info: [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]) => info
-        });
+        let collection2Info : [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t] = match(Big_map.find_opt(address2, allTokens)) {
+            when(None()) : (failwith("No metadata for collection 2") as [list<nat>, Factory.NFT_FA2.NFT.TokenMetadata.t]);
+            when(Some(info)) : info;
+        };
         assert( collection2Info[0] == list([(1 as nat), (2 as nat), (3 as nat), (4 as nat), (5 as nat)]) );
         // verify metadata of token 3 of collection 2
         let collection2Metas : Factory.NFT_FA2.NFT.TokenMetadata.t = collection2Info[1];
-        let collection2MetasTok3 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((3 as nat), collection2Metas), {
-            None: () => (failwith("No token 3 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data),
-            Some: (info: Factory.NFT_FA2.NFT.TokenMetadata.data) => info
-        });
+        let collection2MetasTok3 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((3 as nat), collection2Metas)) {
+            when(None()) : (failwith("No token 3 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data);
+            when(Some(info)) : info
+        };
         assert(collection2MetasTok3.token_info == (Map.literal( list([ ["QRcode", 0xab3442eff132], ["collection", collectionNameBytes] ])) as map<string, bytes>));
         // verify metadata of token 4 of collection 2
-        let collection2MetasTok4 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((4 as nat), collection2Metas), {
-            None: () => (failwith("No token 4 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data),
-            Some: (info: Factory.NFT_FA2.NFT.TokenMetadata.data) => info
-        });
+        let collection2MetasTok4 : Factory.NFT_FA2.NFT.TokenMetadata.data = match(Big_map.find_opt((4 as nat), collection2Metas)) {
+            when(None()) : (failwith("No token 4 in this collection") as Factory.NFT_FA2.NFT.TokenMetadata.data);
+            when(Some(info)) : info;
+        };
         assert(collection2MetasTok4.token_info == (Map.literal( list([ ["QRcode", 0xdeadbeefdead], ["collection", collectionNameBytes] ])) as map<string, bytes>));
         return "OK" 
     };
@@ -233,10 +230,10 @@ const test = () : unit => {
         let _print = Test.log("_transfer_token1_collection_2_should_works");
         // retrieve address collection 2
         let sBefore : Factory.storage = Test.get_storage(addr);
-        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections), {
-            None: () => (list([]) as list<address>),
-            Some: (x: list<address>) => x
-        });
+        let collsBefore : list<address> = match(Big_map.find_opt(alice, sBefore.ownedCollections)) {
+            when(None()) : (list([]) as list<address>);
+            when(Some(x)) : x;
+        };
         let address2 : address = Option.unopt (List.head_opt(collsBefore));
 
         let taddr2 = (Test.cast_address(address2) as typed_address<Factory.NFT_FA2.parameter, extFa2Storage> );
